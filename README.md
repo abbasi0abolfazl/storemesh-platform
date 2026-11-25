@@ -1,36 +1,41 @@
-# StoreMesh Platform
+# StoreMesh Platform (Monorepo)
 
-StoreMesh is a multi-site warehouse and production platform for traceable food processing operations.
+StoreMesh is a multi-site warehouse, cold-chain, and production traceability platform for food processing operations (**Iran**, **Dubai**, **Rome**).
 
-This repository is the governance and architecture hub. Implementation is split into independently reviewable private repositories.
+## Monorepo Structure
 
-## Repositories
+- `apps/site-server/`: Transactional site server (domain rules, auth, audit, outbox, PostgreSQL & JSON repositories)
+- `apps/cloud/`: Cross-site event aggregator and reporting service
+- `apps/web/`: Management and operational web console (RTL)
+- `apps/terminal/`: Factory floor terminal UI + TCP scale/printer drivers
+- `apps/pda/`: Installable offline-capable PWA for Android industrial PDAs
+- `apps/figma-make-ui/`: Interactive 13-station UI/UX prototype (React + Tailwind + Vite)
+- `packages/contracts/`: OpenAPI 3.1 contracts (`storemesh.yaml`, `storemesh-cloud.yaml`) and route parity tests
+- `infrastructure/`: Docker Compose topology, Prometheus monitoring, and automated backup scripts
+- `e2e/`: End-to-end operational acceptance tests
+- `docs/`: Architecture specs, Fix Requests, audit reports, and operational guides
 
-- `storemesh-contracts`: API, event, and shared data contracts
-- `storemesh-site-server`: transactional application server deployed at each site
-- `storemesh-web`: management and operational web application
-- `storemesh-terminal`: Raspberry Pi terminal, scales, scanners, and printers
-- `storemesh-pda`: installable PWA for Android industrial PDAs
-- `storemesh-cloud`: read-only cross-site aggregation and reporting
-- `storemesh-infrastructure`: deployment, backup, monitoring, and per-site configuration
-- `storemesh-e2e`: end-to-end operational acceptance tests
+## Documentation
 
-## Delivery model
+- [Architecture & Storage Overview](./docs/architecture.md)
+- [Domain Rules & Hardware Gates](./docs/domain-rules.md)
+- [Deployment & Local Run Guide](./docs/deployment-guide.md)
+- [Technical Audit Report (2026-11-26)](./docs/technical-audit-2026-11-26.md)
+- [Prioritized Roadmap & Go/No-Go Checklist](./docs/roadmap.md)
+- [Engineering & Agent Rules](./AGENTS.md)
+- [UI/Backend Change Control](./docs/ui-backend-change-control.md)
 
-Work is delivered as small issues and pull requests. Every feature must identify its requirement, contract changes, tests, failure behavior, and operational impact.
+## Quick Start (Local Without Docker)
 
-## Initial vertical slice
+```bash
+./scripts/seed-data.sh
+./scripts/start-all.sh
+./scripts/verify-stack.sh
+```
 
-Login -> Receiving Session -> Scale Measurement -> Batch Creation -> QR Print Queue.
-
-## Current runnable prototype
-
-The first integrated release includes receiving, idempotent retries, weight history, zone movements, transformations with genealogy, packaging, shipment conflict protection, print queues, site outbox events, a management dashboard, terminal and PDA clients, cloud aggregation, multi-site Docker topology, and black-box scenarios.
-
-The current release includes normalized PostgreSQL persistence and migrations, standard HS256 JWT authentication and granular role permissions, audit/outbox delivery, health/readiness/Prometheus endpoints, automated backups with restore validation, and CI coverage. Physical scale/scanner/printer certification, production secrets, and deployment-specific security review remain environment-dependent acceptance activities and are not represented as completed.
-
-The user experience is delivered as three complete, connected surfaces: a responsive RTL operations console covering receiving, inventory, containers, production, quality, packaging, shipment, cross-site transfer, tasks, printing, traceability, configuration, overrides, audit, cloud, and system health; a touch-oriented receiving terminal; and an offline-capable industrial PDA interface.
-
-## Run the complete stack
-
-Clone all implementation repositories into one parent directory, enter `storemesh-infrastructure`, and run `docker compose up --build`. The operational dashboard is then available at http://localhost:8080 and connects to the Iran site API at http://localhost:3000.
+- **Web Console:** `http://localhost:8080`
+- **Terminal UI:** `http://localhost:8081`
+- **PDA PWA:** `http://localhost:8082`
+- **Figma Make Prototype:** `http://localhost:8443`
+- **Site API Health:** `http://localhost:3000/health`
+- **Cloud API Health:** `http://localhost:4000/health`
