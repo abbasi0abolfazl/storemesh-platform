@@ -1,0 +1,10 @@
+{
+  "description": "Experience a fully interactive product prototype that streamlines inventory management with seamless navigation across multiple screens for enhanced user efficiency.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

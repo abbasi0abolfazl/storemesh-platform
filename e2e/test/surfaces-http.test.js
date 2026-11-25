@@ -1,0 +1,2 @@
+import test from'node:test';import assert from'node:assert/strict';const urls={web:process.env.WEB_URL||'http://127.0.0.1:8080',terminal:process.env.TERMINAL_URL||'http://127.0.0.1:8081',pda:process.env.PDA_URL||'http://127.0.0.1:8082',cloud:process.env.CLOUD_URL||'http://127.0.0.1:4000'};
+for(const[name,url]of Object.entries(urls))test(`deployed ${name} surface is reachable`,async()=>{const response=await fetch(name==='cloud'?url+'/health':url);assert.equal(response.status,200);if(name!=='cloud')assert.match(await response.text(),/<html/i)});

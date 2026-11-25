@@ -1,0 +1,2 @@
+import test from'node:test';import assert from'node:assert/strict';import{readFile}from'node:fs/promises';
+test('PDA My Tasks exposes and sends every operator task lifecycle transition',async()=>{const source=await readFile(new URL('../app.js',import.meta.url),'utf8');for(const action of['complete','pause','fail','resume','reopen'])assert.match(source,new RegExp(`['"]${action}['"]`));assert.match(source,/data-task-action/);assert.match(source,/\/api\/tasks\/\$\{b\.dataset\.taskId\}\/\$\{action\}/)});

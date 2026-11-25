@@ -1,0 +1,26 @@
+name: Validate topology
+on: [push, pull_request]
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker compose config
+  restore-drill:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: {POSTGRES_DB: storemesh, POSTGRES_USER: storemesh, POSTGRES_PASSWORD: test-password}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U storemesh -d storemesh"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env: {PGHOST: localhost, PGDATABASE: storemesh, PGUSER: storemesh, PGPASSWORD: test-password, BACKUP_DIR: /tmp/storemesh-backups, SITE_CODE: CI}
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker run --rm --network host -e PGPASSWORD postgres:17-alpine psql -h localhost -U storemesh -d storemesh -c "CREATE TABLE restore_probe(id integer primary key, value text); INSERT INTO restore_probe VALUES(1,'verified');"
+      - run: mkdir -p /tmp/storemesh-backups && docker run --rm --network host -e PGHOST=localhost -e PGDATABASE -e PGUSER -e PGPASSWORD -e BACKUP_DIR=/backups -e SITE_CODE -v "$PWD/backup/backup.sh:/backup.sh:ro" -v /tmp/storemesh-backups:/backups postgres:17-alpine sh /backup.sh
+      - run: docker run --rm --network host -e PGPASSWORD postgres:17-alpine createdb -h localhost -U storemesh restored
+      - run: docker run --rm --network host -e PGPASSWORD -v /tmp/storemesh-backups:/backups postgres:17-alpine sh -c 'pg_restore -h localhost -U storemesh -d restored /backups/*.dump'
+      - run: test "$(docker run --rm --network host -e PGPASSWORD postgres:17-alpine psql -h localhost -U storemesh -d restored -Atc 'SELECT value FROM restore_probe WHERE id=1')" = verified

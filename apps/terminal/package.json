@@ -1,0 +1,1 @@
+{"name":"@storemesh/terminal","private":true,"type":"module","scripts":{"start":"node src/terminal.js","test":"node --test"}}

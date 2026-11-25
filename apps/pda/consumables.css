@@ -1,0 +1,4 @@
+nav{grid-template-columns:repeat(7,1fr)}
+.stock-warning{background:#fff8ee;border-radius:10px;padding-inline:8px!important}
+.danger{color:#a13b2f!important;font-weight:700}
+.muted{color:#687972;font-size:11px}

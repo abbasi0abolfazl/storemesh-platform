@@ -1,0 +1,10 @@
+export class InternalTransferWorkflow{
+  constructor({request,session,scanner,key}){this.request=request;this.session=session;this.scanner=scanner;this.key=key;this.detail=null;this.scanned=new Set()}
+  async fetch(shipmentId){if(!shipmentId?.trim())throw Error('شناسه محموله الزامی است');this.detail=await this.request(`/api/internal-shipments/${encodeURIComponent(shipmentId.trim())}`);this.scanned.clear();return this.detail}
+  expected(){return(this.detail?.packages??[]).map(x=>x.code)}
+  scan(field){if(!this.scanner.isVerified(field))throw Error('اسکن سخت‌افزاری بسته الزامی است');const code=field.value.trim();if(!this.expected().includes(code))throw Error('بسته اسکن‌شده در مانیفست نیست');if(this.scanned.has(code))throw Error('این بسته قبلاً اسکن شده است');this.scanned.add(code);return code}
+  assertComplete(){const expected=this.expected();if(!expected.length||expected.some(code=>!this.scanned.has(code))||this.scanned.size!==expected.length)throw Error('همه بسته‌های مورد انتظار باید اسکن شوند')}
+  async load(vehicle){if(!vehicle?.trim())throw Error('اطلاعات خودرو الزامی است');return this.request(`/api/internal-shipments/${this.detail.shipment.id}/load`,{method:'POST',key:this.key(),body:{sessionId:await this.session(),vehicle:vehicle.trim()}})}
+  async dispatch(){this.assertComplete();return this.request(`/api/internal-shipments/${this.detail.shipment.id}/dispatch`,{method:'POST',key:this.key(),body:{sessionId:await this.session(),scannedPackageCodes:[...this.scanned]}})}
+  async receive(containerField){this.assertComplete();if(!this.detail.manifest)throw Error('مانیفست امضاشده هنوز آماده نیست');if(!this.scanner.isVerified(containerField))throw Error('اسکن سخت‌افزاری ظرف ورودی الزامی است');const containers=await this.request('/api/containers'),container=containers.items.find(x=>x.code===containerField.value.trim());if(!container)throw Error('ظرف اسکن‌شده معتبر نیست');return this.request('/api/internal-transfers/receive',{method:'POST',key:this.key(),body:{sessionId:await this.session(),containerId:container.id,manifest:this.detail.manifest,scannedPackageCodes:[...this.scanned]}})}
+}

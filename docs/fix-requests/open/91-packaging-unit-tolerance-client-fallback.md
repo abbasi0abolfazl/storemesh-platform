@@ -1,3 +1,9 @@
+VERIFIED DONE — superseded by done/91-packaging-unit-tolerance-client-fallback.md
+
+Verified 2026-09-05 by automated check: SHA matches (site-server c736f1487677a8d5ca513f40ac1e248647e530db, contracts a5a8a5e2827c6c5c0b4c73be6fba68eaefdeb516), migrations clean (through 071), full suite green on real re-run (site-server 523/523 pass, contracts 69/69 pass including route-parity), new test substantively rejects client-supplied tolerancePercent:999/targetWeightKg bypass with PACKAGING_TOLERANCE_NOT_CONFIGURED. Requirements met.
+
+---
+
 # Fix Request 91 — UNIT package weight tolerance and target weight fall back to client-supplied values when PACKAGING is unconfigured
 
 ## Problem

@@ -1,0 +1,130 @@
+x-postgres: &postgres
+  image: postgres:17-alpine
+  environment:
+    POSTGRES_DB: storemesh
+    POSTGRES_USER: storemesh
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U storemesh -d storemesh"]
+    interval: 5s
+    timeout: 3s
+    retries: 20
+
+services:
+  iran-db:
+    <<: *postgres
+    volumes: ["iran-db:/var/lib/postgresql/data"]
+  dubai-db:
+    <<: *postgres
+    volumes: ["dubai-db:/var/lib/postgresql/data"]
+  rome-db:
+    <<: *postgres
+    volumes: ["rome-db:/var/lib/postgresql/data"]
+  cloud-db:
+    <<: *postgres
+    volumes: ["cloud-db:/var/lib/postgresql/data"]
+  iran-site:
+    build: ../storemesh-site-server
+    environment:
+      SITE_CODE: IRAN
+      NODE_ENV: production
+      PORT: 3000
+      AUTH_REQUIRED: "true"
+      AUTH_SECRET: "${IRAN_AUTH_SECRET:?IRAN_AUTH_SECRET is required}"
+      BOOTSTRAP_ADMIN_USER: "${BOOTSTRAP_ADMIN_USER:-admin}"
+      BOOTSTRAP_ADMIN_PASSWORD: "${BOOTSTRAP_ADMIN_PASSWORD:?BOOTSTRAP_ADMIN_PASSWORD is required}"
+      DATABASE_URL: "postgresql://storemesh:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@iran-db:5432/storemesh"
+      CLOUD_URL: "http://cloud:4000"
+      SITE_SYNC_KEY: "${IRAN_SITE_KEY:?IRAN_SITE_KEY is required}"
+      TRANSFER_MANIFEST_KEY: "${TRANSFER_MANIFEST_KEY:?TRANSFER_MANIFEST_KEY is required}"
+    ports: ["3000:3000"]
+    depends_on: {iran-db: {condition: service_healthy}}
+  dubai-site:
+    build: ../storemesh-site-server
+    environment:
+      SITE_CODE: DUBAI
+      NODE_ENV: production
+      PORT: 3000
+      AUTH_REQUIRED: "true"
+      AUTH_SECRET: "${DUBAI_AUTH_SECRET:?DUBAI_AUTH_SECRET is required}"
+      BOOTSTRAP_ADMIN_USER: "${BOOTSTRAP_ADMIN_USER:-admin}"
+      BOOTSTRAP_ADMIN_PASSWORD: "${BOOTSTRAP_ADMIN_PASSWORD:?BOOTSTRAP_ADMIN_PASSWORD is required}"
+      DATABASE_URL: "postgresql://storemesh:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@dubai-db:5432/storemesh"
+      CLOUD_URL: "http://cloud:4000"
+      SITE_SYNC_KEY: "${DUBAI_SITE_KEY:?DUBAI_SITE_KEY is required}"
+      TRANSFER_MANIFEST_KEY: "${TRANSFER_MANIFEST_KEY:?TRANSFER_MANIFEST_KEY is required}"
+    ports: ["3001:3000"]
+    depends_on: {dubai-db: {condition: service_healthy}}
+  rome-site:
+    build: ../storemesh-site-server
+    environment:
+      SITE_CODE: ROME
+      NODE_ENV: production
+      PORT: 3000
+      AUTH_REQUIRED: "true"
+      AUTH_SECRET: "${ROME_AUTH_SECRET:?ROME_AUTH_SECRET is required}"
+      BOOTSTRAP_ADMIN_USER: "${BOOTSTRAP_ADMIN_USER:-admin}"
+      BOOTSTRAP_ADMIN_PASSWORD: "${BOOTSTRAP_ADMIN_PASSWORD:?BOOTSTRAP_ADMIN_PASSWORD is required}"
+      DATABASE_URL: "postgresql://storemesh:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@rome-db:5432/storemesh"
+      CLOUD_URL: "http://cloud:4000"
+      SITE_SYNC_KEY: "${ROME_SITE_KEY:?ROME_SITE_KEY is required}"
+      TRANSFER_MANIFEST_KEY: "${TRANSFER_MANIFEST_KEY:?TRANSFER_MANIFEST_KEY is required}"
+    ports: ["3002:3000"]
+    depends_on: {rome-db: {condition: service_healthy}}
+  iran-backup:
+    image: postgres:17-alpine
+    environment: {PGHOST: iran-db, PGDATABASE: storemesh, PGUSER: storemesh, PGPASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}", SITE_CODE: IRAN, RETENTION_DAYS: 14}
+    volumes: ["./backup/backup.sh:/backup.sh:ro", "iran-backups:/backups"]
+    command: ["sh", "-c", "while true; do sh /backup.sh; sleep 86400; done"]
+    depends_on: {iran-db: {condition: service_healthy}}
+  dubai-backup:
+    image: postgres:17-alpine
+    environment: {PGHOST: dubai-db, PGDATABASE: storemesh, PGUSER: storemesh, PGPASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}", SITE_CODE: DUBAI, RETENTION_DAYS: 14}
+    volumes: ["./backup/backup.sh:/backup.sh:ro", "dubai-backups:/backups"]
+    command: ["sh", "-c", "while true; do sh /backup.sh; sleep 86400; done"]
+    depends_on: {dubai-db: {condition: service_healthy}}
+  rome-backup:
+    image: postgres:17-alpine
+    environment: {PGHOST: rome-db, PGDATABASE: storemesh, PGUSER: storemesh, PGPASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}", SITE_CODE: ROME, RETENTION_DAYS: 14}
+    volumes: ["./backup/backup.sh:/backup.sh:ro", "rome-backups:/backups"]
+    command: ["sh", "-c", "while true; do sh /backup.sh; sleep 86400; done"]
+    depends_on: {rome-db: {condition: service_healthy}}
+  cloud:
+    build: ../storemesh-cloud
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      IRAN_SITE_KEY: "${IRAN_SITE_KEY:?IRAN_SITE_KEY is required}"
+      DUBAI_SITE_KEY: "${DUBAI_SITE_KEY:?DUBAI_SITE_KEY is required}"
+      ROME_SITE_KEY: "${ROME_SITE_KEY:?ROME_SITE_KEY is required}"
+      CLOUD_REPORT_KEY: "${CLOUD_REPORT_KEY:?CLOUD_REPORT_KEY is required}"
+      DATABASE_URL: "postgresql://storemesh:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@cloud-db:5432/storemesh"
+    depends_on: {cloud-db: {condition: service_healthy}}
+    ports: ["4000:4000"]
+  web:
+    build: ../storemesh-web
+    ports: ["8080:80"]
+    depends_on:
+      iran-site: {condition: service_started}
+  terminal-ui:
+    build: ../storemesh-terminal
+    ports: ["8081:80"]
+    depends_on:
+      iran-site: {condition: service_started}
+  pda-ui:
+    build: ../storemesh-pda
+    ports: ["8082:80"]
+    depends_on:
+      iran-site: {condition: service_started}
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes: ["./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["9090:9090"]
+volumes:
+  iran-db:
+  dubai-db:
+  rome-db:
+  iran-backups:
+  dubai-backups:
+  rome-backups:
+  cloud-db:

@@ -1,3 +1,9 @@
+VERIFIED DONE — superseded by done/92-fresh-export-net-weights-client-fallback.md
+
+Verified 2026-09-05 by automated check: SHA matches (site-server 21e2f0315a6f9337da2a790b8d3cf8a2759bb2f6, contracts 22455dd04dcd0ffe5774637d002a74437c55fa17), migrations clean, full suite green on real re-run (site-server 524/524 pass, contracts 70/70 pass including route-parity). New test rejects client-supplied allowedWeightsKg both when unconfigured (409 FRESH_EXPORT_NET_WEIGHTS_NOT_CONFIGURED, no side effects) and when it disagrees with server config, and verifies persistence. Requirements met.
+
+---
+
 # Fix Request 92 — Fresh Export allowed net weights fall back to client-supplied list when FRESH_EXPORT is unconfigured
 
 ## Problem

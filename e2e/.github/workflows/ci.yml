@@ -1,0 +1,64 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  scenarios:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: storemesh-e2e
+      - uses: actions/checkout@v6
+        with:
+          repository: mohaeri/storemesh-site-server
+          token: ${{ secrets.STOREMESH_REPO_TOKEN }}
+          path: storemesh-site-server
+      - uses: actions/checkout@v6
+        with:
+          repository: mohaeri/storemesh-cloud
+          token: ${{ secrets.STOREMESH_REPO_TOKEN }}
+          path: storemesh-cloud
+      - uses: actions/checkout@v6
+        with:
+          repository: mohaeri/storemesh-infrastructure
+          token: ${{ secrets.STOREMESH_REPO_TOKEN }}
+          path: storemesh-infrastructure
+      - uses: actions/checkout@v6
+        with:
+          repository: mohaeri/storemesh-web
+          token: ${{ secrets.STOREMESH_REPO_TOKEN }}
+          path: storemesh-web
+      - uses: actions/checkout@v6
+        with:
+          repository: mohaeri/storemesh-terminal
+          token: ${{ secrets.STOREMESH_REPO_TOKEN }}
+          path: storemesh-terminal
+      - uses: actions/checkout@v6
+        with:
+          repository: mohaeri/storemesh-pda
+          token: ${{ secrets.STOREMESH_REPO_TOKEN }}
+          path: storemesh-pda
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            storemesh-e2e/pnpm-lock.yaml
+            storemesh-site-server/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: storemesh-e2e
+      - run: docker compose up -d --build --wait
+        working-directory: storemesh-infrastructure
+      - run: pnpm test
+        working-directory: storemesh-e2e
+      - if: always()
+        run: docker compose logs --no-color
+        working-directory: storemesh-infrastructure
+      - if: always()
+        run: docker compose down -v
+        working-directory: storemesh-infrastructure

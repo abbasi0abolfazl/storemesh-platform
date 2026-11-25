@@ -1,0 +1,41 @@
+@font-face {
+  font-family: "Vazirmatn:ExtraBold";
+  font-style: normal;
+  font-weight: 800;
+  src: url("https://static.figma.com/font/Vazirmatn_wght__2") format("woff2");
+}
+
+@font-face {
+  font-family: "Vazirmatn:Bold";
+  font-style: normal;
+  font-weight: 700;
+  src: url("https://static.figma.com/font/Vazirmatn_wght__2") format("woff2");
+}
+
+@font-face {
+  font-family: "Vazirmatn:Regular";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://static.figma.com/font/Vazirmatn_wght__2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cousine:Regular";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://static.figma.com/font/Cousine-Regular_1") format("woff2");
+}
+
+@import 'tailwindcss';
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+* {
+  box-sizing: border-box;
+}

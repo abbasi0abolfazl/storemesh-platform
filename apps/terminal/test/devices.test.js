@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import { ProtocolScale,ProtocolPrinter } from '../src/devices.js';
+test('scale protocol converts grams and rejects malformed frames',async()=>{assert.equal((await new ProtocolScale({request:async()=> '12500 g'}).readStable()).weightKg,12.5);await assert.rejects(()=>new ProtocolScale({request:async()=> 'ERR'}).readStable(),e=>e.code==='SCALE_PROTOCOL_ERROR')});
+test('printer protocol requires a positive device acknowledgement',async()=>{assert.equal((await new ProtocolPrinter({request:async()=> 'OK 42'}).print({id:42})).printed,true);await assert.rejects(()=>new ProtocolPrinter({request:async()=> 'PAPER_OUT'}).print({id:42}),e=>e.code==='PRINTER_REJECTED')});

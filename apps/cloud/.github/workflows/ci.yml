@@ -1,0 +1,23 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: {POSTGRES_DB: storemesh_cloud, POSTGRES_USER: storemesh, POSTGRES_PASSWORD: test-password}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U storemesh -d storemesh_cloud"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://storemesh:test-password@localhost:5432/storemesh_cloud
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with: {node-version: 22}
+      - uses: pnpm/action-setup@v6
+        with: {version: 11.19.0}
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test

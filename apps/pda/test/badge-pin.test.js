@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFile}from'node:fs/promises';
+test('PDA badge login cannot omit the independent PIN',async()=>{const[html,app]=await Promise.all(['../index.html','../app.js'].map(x=>readFile(new URL(x,import.meta.url),'utf8')));assert.match(html,/id="badgePin"/);assert.match(html,/pattern="\[0-9\]\{6\}"/);assert.match(app,/badgeCode:\$\('#badgeCode'\)\.value,pin,deviceId/);assert.match(app,/\^\\d\{6\}\$/)});
